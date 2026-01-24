@@ -3,10 +3,19 @@ from PIL import Image
 from torch.utils.data import Dataset
 
 class NISTDataset(Dataset):
-    def __init__(self, root_dir, partitions=None, transform=None):
+    def __init__(self, root_dir, partitions=None, transform=None, selected_classes=None):
+        """
+        Args:
+            root_dir: Root directory containing by_class folder
+            partitions: List of partition names to include (e.g., ['train', 'hsf_7'])
+            transform: Torchvision transforms to apply
+            selected_classes: List of hex codes to include (e.g., ['30', '41', '61'])
+                             If None, all classes are loaded
+        """
         self.root_dir = Path(root_dir)
         self.transform = transform
         self.partitions = partitions
+        self.selected_classes = selected_classes
         self.samples = []
         self.class_to_idx = {}
         self.idx_to_char = {}
@@ -16,12 +25,21 @@ class NISTDataset(Dataset):
     def _load_dataset_structure(self):
         # 1. Identify all class folders (e.g., '30', '31', '4a')
         class_root = self.root_dir / "by_class"
+
+
         if not class_root.exists():
             raise FileNotFoundError(f"Directory not found: {class_root}")
 
         # Sort to ensure deterministic label ordering (30 -> 0, 31 -> 1, etc.)
-        class_folders = sorted([d.name for d in class_root.iterdir() if d.is_dir()])
-        
+        all_class_folders = sorted([d.name for d in class_root.iterdir() if d.is_dir()])
+
+        # Filter to selected classes if specified
+        if self.selected_classes:
+            class_folders = [c for c in all_class_folders if c in self.selected_classes]
+            print(f"Filtering to {len(class_folders)} selected classes: {[chr(int(c, 16)) for c in class_folders]}")
+        else:
+            class_folders = all_class_folders
+
         # Create mappings: Hex Folder -> Int Index -> Real Char
         for idx, hex_code in enumerate(class_folders):
             self.class_to_idx[hex_code] = idx
@@ -31,6 +49,7 @@ class NISTDataset(Dataset):
             except ValueError:
                 self.idx_to_char[idx] = "Unknown"
 
+
         # 2. Collect image paths
         # We iterate through classes, then subfolders, checking partition rules
         print(f"Scanning dataset... (Filter: {self.partitions if self.partitions else 'All'})")
@@ -38,7 +57,7 @@ class NISTDataset(Dataset):
         for hex_code in class_folders:
             class_path = class_root / hex_code
             target_idx = self.class_to_idx[hex_code]
-            
+
             # Go through subfolders (hsf_0, train_30, etc.)
             for subfolder in class_path.iterdir():
                 if not subfolder.is_dir():
@@ -64,9 +83,9 @@ class NISTDataset(Dataset):
     def __getitem__(self, idx):
         img_path, label = self.samples[idx]
         
-        image = Image.open(img_path).convert("L")
+        image = Image.open(img_path).convert("L") # Luminance (grayscale)
 
-        if self.transform:
+        if self.transform: # for futre resize
             image = self.transform(image)
         
         return image, label

@@ -1,0 +1,80 @@
+# Configuration for full 62-class NIST OCR training
+# Classes: A-Z (uppercase), a-z (lowercase), 0-9 (digits)
+
+# Dataset configuration - scaled for 62 classes
+dataset:
+  root: "."
+  train_partitions:
+    - train
+  test_partitions:
+    - hsf_7
+    - hsf_4
+    - hsf_0
+  train_limit: null  
+  test_limit: null     
+  image_size: 32
+
+# Zernike Moments + SVM - tuned for more classes
+zernike:
+  radius: 30
+  degree: 15            # Higher degree for more discriminative features
+  kernel: "rbf"
+  C: 10.0
+  gamma: "scale"
+
+# Projection Histograms + kNN - tuned for more classes
+projection:
+  n_neighbors: 7        # More neighbors for stability with 62 classes
+  weights: "distance"
+  metric: "euclidean"
+  normalize: true
+
+# Preprocessing - enabled for better feature extraction
+preprocessing:
+  enabled: true
+  adaptive_threshold: true
+  threshold_method: "otsu"
+  morphology: true
+  morph_operation: "opening"
+  morph_kernel_size: 3
+  normalize: true
+  deskew: true
+
+# Data augmentation - important for 62 classes
+augmentation:
+  rotation_range: 10        # Slightly less rotation to preserve letter identity
+  elastic_alpha: 20         # Reduced elastic distortion
+  elastic_sigma: 4
+  translation_range: 0.08
+  scale_range: [0.95, 1.05]
+  noise_std: 0.03
+  apply_prob: 0.5
+
+# CNN configuration - scaled for 62 classes (runs both CNN and CNN + Aug automatically)
+cnn:
+  epochs: 30
+  batch_size: 64
+  learning_rate: 0.001
+  optimizer: "adamw"  # AdamW with weight decay helps generalization
+  use_scheduler: true
+  early_stopping_patience: 7
+
+# Experiment configuration
+experiment:
+  skip_learning_curves: true  # Skip for faster training
+  skip_hog: false
+  skip_cnn: false
+  skip_zernike: false
+  skip_projection: false
+  checkpoint_dir: "checkpoints"
+  results_dir: "results_62_classes"
+  save_predictions: true
+
+# Visualization
+visualization:
+  confusion_matrix: true
+  per_class_metrics: true
+  misclassifications: true
+  max_misclassifications: 30
+  training_history: true
+  comparison_plot: true
