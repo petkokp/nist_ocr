@@ -4,7 +4,7 @@ Handwritten character recognition using classical computer vision and deep learn
 
 ## Dataset
 
-Download from: https://s3.amazonaws.com/nist-srd/SD19/by_class.zip
+Download from: https://www.nist.gov/srd/nist-special-database-19
 
 Extract so that `by_class/` folder is at root level.
 
