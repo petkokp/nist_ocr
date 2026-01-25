@@ -14,6 +14,14 @@ dataset:
   test_limit: null     
   image_size: 32
 
+# HOG + Linear SVM - optimized for large datasets
+hog:
+  orientations: 9
+  pixels_per_cell: [8, 8]
+  cells_per_block: [2, 2]
+  class_weight: "balanced"
+  max_iter: 5000          # Increase for large datasets (default 1000)
+
 # Zernike Moments + SVM - tuned for more classes
 zernike:
   radius: 30
@@ -42,26 +50,28 @@ preprocessing:
 
 # Data augmentation - important for 62 classes
 augmentation:
-  rotation_range: 10        # Slightly less rotation to preserve letter identity
-  elastic_alpha: 20         # Reduced elastic distortion
+  rotation_range: 5 #10        # Slightly less rotation to preserve letter identity
+  elastic_alpha: 0 #20         # Reduced elastic distortion
   elastic_sigma: 4
-  translation_range: 0.08
+  translation_range: 0.05
   scale_range: [0.95, 1.05]
-  noise_std: 0.03
-  apply_prob: 0.5
+  noise_std: 0.02 #0.03
+  apply_prob: 0.3 #0.5
 
 # CNN configuration - scaled for 62 classes (runs both CNN and CNN + Aug automatically)
 cnn:
   epochs: 30
-  batch_size: 64
-  learning_rate: 0.001
+  batch_size: 256 #64
+  learning_rate: 0.0005 #0.001
   optimizer: "adamw"  # AdamW with weight decay helps generalization
+  weight_decay: 0.0005 #previous NO
   use_scheduler: true
-  early_stopping_patience: 7
+  early_stopping_patience: 5 #7
+  label_smoothing: 0.1 # previous NO
 
 # Experiment configuration
 experiment:
-  skip_learning_curves: true  # Skip for faster training
+  skip_learning_curves: true  # CRITICAL: Skip to save RAM (trains 6x fewer times)
   skip_hog: false
   skip_cnn: false
   skip_zernike: false

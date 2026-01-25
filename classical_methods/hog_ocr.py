@@ -14,13 +14,14 @@ class HOGSVM_OCR(BaseClassicalOCR):
     """
 
     def __init__(self, orientations=9, pixels_per_cell=(8, 8), cells_per_block=(2, 2),
-                 class_weight='balanced', preprocessing_config=None):
+                 class_weight='balanced', max_iter=1000, preprocessing_config=None):
         """
         Args:
             orientations: Number of orientation bins for HOG
             pixels_per_cell: Size of cell in pixels
             cells_per_block: Number of cells per block
             class_weight: 'balanced' to handle class imbalance, or None
+            max_iter: Maximum iterations for LinearSVC
             preprocessing_config: Optional preprocessing configuration
         """
         super().__init__(preprocessing_config)
@@ -30,7 +31,7 @@ class HOGSVM_OCR(BaseClassicalOCR):
         self.cells_per_block = cells_per_block
 
         # LinearSVC is faster than SVC for large datasets
-        self.classifier = LinearSVC(dual="auto", max_iter=1000, class_weight=class_weight)
+        self.classifier = LinearSVC(dual="auto", max_iter=max_iter, class_weight=class_weight)
 
     def extract_features(self, images):
         """

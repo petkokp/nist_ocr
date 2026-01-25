@@ -281,8 +281,9 @@ if __name__ == "__main__":
 
     # Learning curves
     if not config['experiment']['skip_learning_curves']:
-        train_sizes = [100, 300, 600, 1000, 1500, min(2000, dataset_config['train_limit'])]
-        train_sizes = [s for s in train_sizes if s <= dataset_config['train_limit']]
+        max_train = len(train_indices)
+        train_sizes = [100, 300, 600, 1000, 1500, min(2000, max_train)]
+        train_sizes = [s for s in train_sizes if s <= max_train]
 
         if not config['experiment']['skip_hog']:
             print("\n" + "="*60)
@@ -290,7 +291,13 @@ if __name__ == "__main__":
             print("="*60)
             hog_lc_config = config.get('hog', {})
             hog_train_acc, hog_test_acc = compute_learning_curve(
-                model_factory=lambda: HOGSVM_OCR(class_weight=hog_lc_config.get('class_weight', 'balanced')),
+                model_factory=lambda: HOGSVM_OCR(
+                    orientations=hog_lc_config.get('orientations', 9),
+                    pixels_per_cell=tuple(hog_lc_config.get('pixels_per_cell', [8, 8])),
+                    cells_per_block=tuple(hog_lc_config.get('cells_per_block', [2, 2])),
+                    class_weight=hog_lc_config.get('class_weight', 'balanced'),
+                    max_iter=hog_lc_config.get('max_iter', 1000)
+                ),
                 X_train=X_train,
                 y_train=y_train,
                 X_test=X_test,
@@ -376,7 +383,9 @@ if __name__ == "__main__":
                     use_scheduler=cnn_config['use_scheduler'],
                     data_augmentation=None,
                     class_weight=cnn_config.get('class_weight', 'balanced'),
-                    image_size=dataset_config['image_size']
+                    image_size=dataset_config['image_size'],
+                    weight_decay=cnn_config.get('weight_decay', 1e-4),
+                    label_smoothing=cnn_config.get('label_smoothing', 0.0)
                 )
 
             cnn_train_acc, cnn_test_acc = compute_learning_curve(
@@ -414,7 +423,9 @@ if __name__ == "__main__":
                     use_scheduler=cnn_config['use_scheduler'],
                     data_augmentation=aug_pipeline,
                     class_weight=cnn_config.get('class_weight', 'balanced'),
-                    image_size=dataset_config['image_size']
+                    image_size=dataset_config['image_size'],
+                    weight_decay=cnn_config.get('weight_decay', 1e-4),
+                    label_smoothing=cnn_config.get('label_smoothing', 0.0)
                 )
 
             cnn_aug_train_acc, cnn_aug_test_acc = compute_learning_curve(
@@ -447,8 +458,18 @@ if __name__ == "__main__":
         hog_config = config.get('hog', {})
         models_to_test.append((
             "HOG + SVM",
-            HOGSVM_OCR(class_weight=hog_config.get('class_weight', 'balanced')),
-            {'class_weight': hog_config.get('class_weight', 'balanced')}
+            HOGSVM_OCR(
+                orientations=hog_config.get('orientations', 9),
+                pixels_per_cell=tuple(hog_config.get('pixels_per_cell', [8, 8])),
+                cells_per_block=tuple(hog_config.get('cells_per_block', [2, 2])),
+                class_weight=hog_config.get('class_weight', 'balanced'),
+                max_iter=hog_config.get('max_iter', 1000),
+                preprocessing_config=preprocessing_config
+            ),
+            {
+                'class_weight': hog_config.get('class_weight', 'balanced'),
+                'max_iter': hog_config.get('max_iter', 1000)
+            }
         ))
 
     if not config['experiment'].get('skip_zernike', False):
@@ -508,7 +529,9 @@ if __name__ == "__main__":
                 use_scheduler=cnn_config['use_scheduler'],
                 data_augmentation=None,
                 class_weight=cnn_config.get('class_weight', 'balanced'),
-                image_size=dataset_config['image_size']
+                image_size=dataset_config['image_size'],
+                weight_decay=cnn_config.get('weight_decay', 1e-4),
+                label_smoothing=cnn_config.get('label_smoothing', 0.0)
             ),
             {
                 'optimizer': cnn_config['optimizer'],
@@ -537,7 +560,9 @@ if __name__ == "__main__":
                 use_scheduler=cnn_config['use_scheduler'],
                 data_augmentation=augmentation_pipeline,
                 class_weight=cnn_config.get('class_weight', 'balanced'),
-                image_size=dataset_config['image_size']
+                image_size=dataset_config['image_size'],
+                weight_decay=cnn_config.get('weight_decay', 1e-4),
+                label_smoothing=cnn_config.get('label_smoothing', 0.0)
             ),
             {
                 'optimizer': cnn_config['optimizer'],

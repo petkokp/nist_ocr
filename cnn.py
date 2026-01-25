@@ -5,6 +5,7 @@ from torch.utils.data import DataLoader, TensorDataset
 import numpy as np
 import time
 from pathlib import Path
+from config import load_config, merge_args_with_config, print_config
 
 class CNN(nn.Module):
     """CNN with batch normalization and deeper architecture for OCR"""
@@ -35,6 +36,7 @@ class CNN(nn.Module):
         fc_size = image_size // 16
         self.fc1 = nn.Linear(256 * fc_size * fc_size, 512)
         self.bn_fc = nn.BatchNorm1d(512)
+        self.dropout_conv = nn.Dropout2d(0.3)  # For conv layers ## Add new
         self.dropout = nn.Dropout(0.5)
         self.fc2 = nn.Linear(512, num_classes)
 
@@ -44,25 +46,29 @@ class CNN(nn.Module):
         x = self.bn1(x)
         x = self.relu(x)
         x = self.pool(x)
-
+        x = self.dropout_conv(x)  # Add after each pooling
+        
         # Block 2
         x = self.conv2(x)
         x = self.bn2(x)
         x = self.relu(x)
         x = self.pool(x)
-
+        x = self.dropout_conv(x)  # Add after each pooling
+            
         # Block 3
         x = self.conv3(x)
         x = self.bn3(x)
         x = self.relu(x)
         x = self.pool(x)
-
+        x = self.dropout_conv(x)  # Add after each pooling
+            
         # Block 4
         x = self.conv4(x)
         x = self.bn4(x)
         x = self.relu(x)
         x = self.pool(x)
-
+        x = self.dropout_conv(x)  # Add after each pooling
+        
         # Flatten and classify
         x = x.view(x.size(0), -1)
         x = self.fc1(x)
@@ -76,7 +82,8 @@ class DeepLearningOCR:
     def __init__(self, num_classes=62, epochs=20, batch_size=64, learning_rate=0.001,
                  early_stopping_patience=5, checkpoint_dir="checkpoints",
                  optimizer_type="adamw", use_scheduler=True,
-                 data_augmentation=False, class_weight='balanced', image_size=64):
+                 data_augmentation=False, class_weight='balanced', image_size=64,
+                 weight_decay=1e-4, label_smoothing=0.0):
         self.num_classes = num_classes
         self.epochs = epochs
         self.batch_size = batch_size
@@ -87,6 +94,9 @@ class DeepLearningOCR:
         self.data_augmentation = data_augmentation
         self.use_scheduler = use_scheduler
         self.class_weight = class_weight  # 'balanced' or None
+        # Convert to float in case YAML loads as string
+        self.weight_decay = float(weight_decay) if weight_decay is not None else 1e-4
+        self.label_smoothing = float(label_smoothing) if label_smoothing is not None else 0.0
 
         if torch.cuda.is_available():
             self.device = torch.device("cuda")
@@ -98,17 +108,18 @@ class DeepLearningOCR:
         print(f"Initializing CNN on device: {self.device}")
         print(f"Optimizer: {optimizer_type}, LR Scheduler: {use_scheduler}")
         print(f"Number of classes: {num_classes}, Image size: {image_size}")
+        print(f"Weight decay: {self.weight_decay}, Label smoothing: {self.label_smoothing}")
 
         self.model = CNN(num_classes=num_classes, image_size=image_size).to(self.device)
-        self.criterion = nn.CrossEntropyLoss()
+        self.criterion = nn.CrossEntropyLoss(label_smoothing=self.label_smoothing)
 
         # Select optimizer (default: AdamW)
         if optimizer_type == "sgd":
-            self.optimizer = optim.SGD(self.model.parameters(), lr=learning_rate, momentum=0.9, weight_decay=1e-4)
+            self.optimizer = optim.SGD(self.model.parameters(), lr=learning_rate, momentum=0.9, weight_decay=self.weight_decay)
         elif optimizer_type == "adam":
-            self.optimizer = optim.Adam(self.model.parameters(), lr=learning_rate)
+            self.optimizer = optim.Adam(self.model.parameters(), lr=learning_rate, weight_decay=self.weight_decay)
         else:  # adamw (default)
-            self.optimizer = optim.AdamW(self.model.parameters(), lr=learning_rate, weight_decay=1e-4)
+            self.optimizer = optim.AdamW(self.model.parameters(), lr=learning_rate, weight_decay=self.weight_decay)
 
         # Learning rate scheduler
         self.scheduler = None

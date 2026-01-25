@@ -38,9 +38,7 @@ by_class/
 Int/
 Real/
 Figure_*.png
-plots/
 results/
-results_*/
 report_figures/
 experiments.csv
 
