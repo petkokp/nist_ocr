@@ -1,4 +1,46 @@
-.venv
-__pycache__
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+*.egg-info/
+*.egg
+
+# Virtual environments
+.venv/
+venv/
+env/
+ENV/
+
+# PyTorch models
+*.pth
+*.pt
+checkpoints/
+models/
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Project specific - Dataset
+by_class/
 *.zip
-by_class
+
+# Project specific - Generated files
+Int/
+Real/
+Figure_*.png
+results/
+report_figures/
+experiments.csv
+
+# Logs
+*.log

@@ -1,0 +1,84 @@
+# Default configuration for NIST OCR benchmark
+
+# Dataset configuration
+dataset:
+  root: "."
+  train_partitions:
+    - train_30
+    - train_31
+    - train_32
+  test_partitions:
+    - hsf_7
+    - hsf_4
+    - hsf_0
+  train_limit: 2000
+  test_limit: 500
+  image_size: 32
+
+# Zernike Moments + SVM configuration
+zernike:
+  radius: 30
+  degree: 12
+  kernel: "rbf"
+  C: 10.0
+  gamma: "scale"
+
+# Projection Histograms + kNN configuration
+projection:
+  n_neighbors: 5
+  weights: "distance"
+  metric: "euclidean"
+  normalize: true
+
+# Preprocessing configuration (for classical methods)
+preprocessing:
+  enabled: true
+  adaptive_threshold: true
+  threshold_method: "otsu"  # "otsu" or "sauvola"
+  morphology: true
+  morph_operation: "opening"  # "opening", "closing", or "both"
+  morph_kernel_size: 3
+  normalize: true
+  deskew: true
+
+# CNN model configuration (runs both CNN and CNN + Aug automatically)
+cnn:
+  epochs: 10
+  batch_size: 32
+  learning_rate: 0.001
+  optimizer: "adamw"  # "adamw", "adam", or "sgd"
+  use_scheduler: true
+  early_stopping_patience: 5
+
+# Data augmentation configuration (for CNN)
+augmentation:
+  rotation_range: 15  # degrees
+  elastic_alpha: 34
+  elastic_sigma: 4
+  translation_range: 0.1  # fraction of image size
+  scale_range: [0.9, 1.1]
+  noise_std: 0.05
+  apply_prob: 0.5  # probability of applying each transform
+
+# Experiment configuration
+experiment:
+  skip_learning_curves: false
+  skip_hog: false
+  skip_zernike: false
+  skip_projection: false
+  skip_cnn: false
+  checkpoint_dir: "checkpoints"
+  results_dir: "results"
+  save_predictions: true
+  save_visualizations: true
+
+# Visualization configuration
+visualization:
+  confusion_matrix: true
+  per_class_metrics: true
+  misclassifications: true
+  max_misclassifications: 20
+  training_history: true
+  feature_visualization: true  # Visualize features for classical methods
+  augmentation_samples: true  # Show augmentation examples
+  comparison_plot: true  # Compare all methods

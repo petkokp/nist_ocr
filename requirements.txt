@@ -4,3 +4,10 @@ numpy
 pillow
 scikit-image
 scikit-learn
+matplotlib
+tqdm
+pyyaml
+seaborn
+mahotas
+opencv-python
+scipy
