@@ -6,8 +6,8 @@ from torchvision import transforms
 from pathlib import Path
 
 from dataset import NISTDataset
-from cnn import DeepLearningOCR
-from resnet_ocr import ResNetOCR
+from deep_learning_methods.cnn import DeepLearningOCR
+from deep_learning_methods.resnet_ocr import ResNetOCR
 from classical_methods import LBPSVM_OCR, HOGSVM_OCR, ZernikeOCR, ProjectionOCR
 
 from visualizations import (

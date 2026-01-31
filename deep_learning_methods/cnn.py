@@ -5,10 +5,8 @@ from torch.utils.data import DataLoader, TensorDataset
 import numpy as np
 import time
 from pathlib import Path
-from config import load_config, merge_args_with_config, print_config
 
 class CNN(nn.Module):
-    """CNN with batch normalization and deeper architecture for OCR"""
     def __init__(self, num_classes=62, image_size=64):
         super(CNN, self).__init__()
 

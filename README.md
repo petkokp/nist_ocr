@@ -23,6 +23,9 @@ python benchmark.py
 # Skip learning curves for faster run
 python benchmark.py --skip-learning-curves
 
+# Skip visualizations for faster run
+python benchmark.py --no-visualizations
+
 # Train on all 62 classes (A-Z, a-z, 0-9)
 python benchmark.py --config config_62_classes.yaml
 ```
