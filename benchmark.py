@@ -7,7 +7,8 @@ from pathlib import Path
 
 from dataset import NISTDataset
 from cnn import DeepLearningOCR
-from classical_methods import HOGSVM_OCR, ZernikeOCR, ProjectionOCR
+from resnet_ocr import ResNetOCR
+from classical_methods import LBPSVM_OCR, HOGSVM_OCR, ZernikeOCR, ProjectionOCR
 
 from visualizations import (
     compute_learning_curve, plot_learning_curve,
@@ -49,7 +50,14 @@ def evaluate_model(name, model, data_train, data_test, class_names, X_test_raw, 
     acc = accuracy_score(y_test, predictions)
     print(f"[{name}] Accuracy: {acc*100:.2f}%")
     print("-" * 60)
-    print(classification_report(y_test, predictions, target_names=class_names))
+    labels = list(range(len(class_names)))
+    print(classification_report(
+        y_test,
+        predictions,
+        labels=labels,
+        target_names=class_names,
+        zero_division=0
+    ))
 
     # Create results directory
     results_dir = Path(config['experiment']['results_dir']) / name.replace(' ', '_')
@@ -145,10 +153,14 @@ if __name__ == "__main__":
     # Experiment control
     parser.add_argument('--skip-learning-curves', action='store_true',
                         help="Skip learning curve generation")
+    parser.add_argument('--skip-lbp', action='store_true',
+                        help="Skip LBP+SVM model")
     parser.add_argument('--skip-hog', action='store_true',
                         help="Skip HOG+SVM model")
     parser.add_argument('--skip-cnn', action='store_true',
                         help="Skip CNN model")
+    parser.add_argument('--skip-resnet', action='store_true',
+                        help="Skip ResNet model")
     parser.add_argument('--skip-zernike', action='store_true',
                         help="Skip Zernike+SVM model")
     parser.add_argument('--skip-projection', action='store_true',
@@ -212,10 +224,19 @@ if __name__ == "__main__":
                     'use_scheduler': not args.no_scheduler,
                     'early_stopping_patience': args.early_stopping_patience or 5
                 },
+                'resnet': {
+                    'epochs': args.cnn_epochs or 10,
+                    'batch_size': args.batch_size or 32,
+                    'learning_rate': args.learning_rate or 0.001,
+                    'optimizer': args.optimizer or 'adamw',
+                    'use_scheduler': not args.no_scheduler,
+                    'early_stopping_patience': args.early_stopping_patience or 5
+                },
                 'experiment': {
                     'skip_learning_curves': args.skip_learning_curves,
                     'skip_hog': args.skip_hog,
                     'skip_cnn': args.skip_cnn,
+                    'skip_resnet': args.skip_resnet,
                     'checkpoint_dir': args.checkpoint_dir or 'checkpoints',
                     'results_dir': args.results_dir or 'results',
                     'save_predictions': True,
@@ -276,14 +297,47 @@ if __name__ == "__main__":
     X_test = [test_dataset[i][0] for i in test_indices]
     y_test = [test_dataset[i][1] for i in test_indices]
 
-    # Get class names for reporting
-    class_names = [train_dataset.idx_to_char[i] for i in sorted(list(set(y_test)))]
+    # Get class names for reporting DONT SORT
+    #class_names = [train_dataset.idx_to_char[i] for i in sorted(list(set(y_test)))]
+    class_names = [train_dataset.idx_to_char[i] for i in range(len(train_dataset.idx_to_char))]
 
+    # Prepare preprocessing config for classical methods
+    preprocessing_config = config.get('preprocessing') if config.get('preprocessing', {}).get('enabled', False) else None
     # Learning curves
     if not config['experiment']['skip_learning_curves']:
         max_train = len(train_indices)
         train_sizes = [100, 300, 600, 1000, 1500, min(2000, max_train)]
         train_sizes = [s for s in train_sizes if s <= max_train]
+
+        if not config['experiment']['skip_lbp']:
+            print("\n" + "="*60)
+            print("LEARNING CURVE: LBP + SVM")
+            print("="*60)
+
+            
+            lbp_config = config.get('lbp', {})
+            lbp_train_acc, lbp_test_acc = compute_learning_curve(
+                model_factory=lambda: LBPSVM_OCR(
+                    radius=lbp_config.get('radius', 2),
+                    n_points=lbp_config.get('n_points'),
+                    method=lbp_config.get('method', 'uniform'),
+                    class_weight=lbp_config.get('class_weight', 'balanced'),
+                    max_iter=lbp_config.get('max_iter', 1000),
+                    preprocessing_config=preprocessing_config
+
+                ),
+                X_train=X_train,
+                y_train=y_train,
+                X_test=X_test,
+                y_test=y_test,
+                train_sizes=train_sizes
+            )
+            plot_learning_curve(
+                train_sizes,
+                lbp_train_acc,
+                lbp_test_acc,
+                title="Learning Curve – LBP + Linear SVM"
+            )
 
         if not config['experiment']['skip_hog']:
             print("\n" + "="*60)
@@ -361,6 +415,44 @@ if __name__ == "__main__":
                 projection_train_acc,
                 projection_test_acc,
                 title="Learning Curve – Projection + kNN"
+            )
+
+        if not config['experiment'].get('skip_resnet', False):
+            resnet_config = config.get('resnet', {})
+            print("\n" + "="*60)
+            print("LEARNING CURVE: ResNet")
+            print("="*60)
+
+            def make_resnet_model():
+                return ResNetOCR(
+                    num_classes=len(train_dataset.class_to_idx),
+                    epochs=resnet_config.get('epochs', 20),
+                    batch_size=resnet_config.get('batch_size', 64),
+                    learning_rate=resnet_config.get('learning_rate', 0.001),
+                    early_stopping_patience=resnet_config.get('early_stopping_patience', 5),
+                    checkpoint_dir=config['experiment']['checkpoint_dir'],
+                    optimizer_type=resnet_config.get('optimizer', 'adamw'),
+                    use_scheduler=resnet_config.get('use_scheduler', True),
+                    data_augmentation=None,
+                    class_weight=resnet_config.get('class_weight', 'balanced'),
+                    image_size=dataset_config['image_size'],
+                    weight_decay=resnet_config.get('weight_decay', 1e-4),
+                    label_smoothing=resnet_config.get('label_smoothing', 0.0)
+                )
+
+            resnet_train_acc, resnet_test_acc = compute_learning_curve(
+                model_factory=make_resnet_model,
+                X_train=X_train,
+                y_train=y_train,
+                X_test=X_test,
+                y_test=y_test,
+                train_sizes=train_sizes
+            )
+            plot_learning_curve(
+                train_sizes,
+                resnet_train_acc,
+                resnet_test_acc,
+                title="Learning Curve – ResNet"
             )
 
         if not config['experiment']['skip_cnn']:
@@ -450,10 +542,25 @@ if __name__ == "__main__":
 
     models_to_test = []
 
-    # Prepare preprocessing config for classical methods
-    preprocessing_config = config.get('preprocessing') if config.get('preprocessing', {}).get('enabled', False) else None
-
     # Classical methods
+    if not config['experiment']['skip_lbp']:
+        lbp_config = config.get('lbp', {})
+        models_to_test.append((
+            "LBP + SVM",
+            LBPSVM_OCR(
+                radius=lbp_config.get('radius', 2),
+                n_points=lbp_config.get('n_points'),
+                method=lbp_config.get('method', 'uniform'),
+                class_weight=lbp_config.get('class_weight', 'balanced'),
+                max_iter=lbp_config.get('max_iter', 1000),
+                preprocessing_config=preprocessing_config
+            ),
+            {
+                'class_weight': lbp_config.get('class_weight', 'balanced'),
+                'max_iter': lbp_config.get('max_iter', 1000)
+            }
+        ))
+
     if not config['experiment']['skip_hog']:
         hog_config = config.get('hog', {})
         models_to_test.append((
@@ -509,6 +616,66 @@ if __name__ == "__main__":
                 'method': 'projection',
                 'n_neighbors': projection_config.get('n_neighbors', 5),
                 'preprocessing': preprocessing_config is not None
+            }
+        ))
+
+    if not config['experiment'].get('skip_resnet', False):
+        resnet_config = config.get('resnet', {})
+
+        models_to_test.append((
+            "ResNet",
+            ResNetOCR(
+                num_classes=len(train_dataset.class_to_idx),
+                epochs=resnet_config.get('epochs', 20),
+                batch_size=resnet_config.get('batch_size', 64),
+                learning_rate=resnet_config.get('learning_rate', 0.001),
+                early_stopping_patience=resnet_config.get('early_stopping_patience', 5),
+                checkpoint_dir=config['experiment']['checkpoint_dir'],
+                optimizer_type=resnet_config.get('optimizer', 'adamw'),
+                use_scheduler=resnet_config.get('use_scheduler', True),
+                data_augmentation=None,
+                class_weight=resnet_config.get('class_weight', 'balanced'),
+                image_size=dataset_config['image_size'],
+                weight_decay=resnet_config.get('weight_decay', 1e-4),
+                label_smoothing=resnet_config.get('label_smoothing', 0.0)
+            ),
+            {
+                'optimizer': resnet_config.get('optimizer', 'adamw'),
+                'learning_rate': resnet_config.get('learning_rate', 0.001),
+                'batch_size': resnet_config.get('batch_size', 64),
+                'epochs': resnet_config.get('epochs', 20),
+                'class_weight': resnet_config.get('class_weight', 'balanced'),
+                'data_augmentation': False
+            }
+        ))
+
+        from preprocessing.augmentation import AugmentationPipeline
+        augmentation_pipeline = AugmentationPipeline(config.get('augmentation', {}))
+
+        models_to_test.append((
+            "ResNet + Aug",
+            ResNetOCR(
+                num_classes=len(train_dataset.class_to_idx),
+                epochs=resnet_config.get('epochs', 20),
+                batch_size=resnet_config.get('batch_size', 64),
+                learning_rate=resnet_config.get('learning_rate', 0.001),
+                early_stopping_patience=resnet_config.get('early_stopping_patience', 5),
+                checkpoint_dir=config['experiment']['checkpoint_dir'],
+                optimizer_type=resnet_config.get('optimizer', 'adamw'),
+                use_scheduler=resnet_config.get('use_scheduler', True),
+                data_augmentation=augmentation_pipeline,
+                class_weight=resnet_config.get('class_weight', 'balanced'),
+                image_size=dataset_config['image_size'],
+                weight_decay=resnet_config.get('weight_decay', 1e-4),
+                label_smoothing=resnet_config.get('label_smoothing', 0.0)
+            ),
+            {
+                'optimizer': resnet_config.get('optimizer', 'adamw'),
+                'learning_rate': resnet_config.get('learning_rate', 0.001),
+                'batch_size': resnet_config.get('batch_size', 64),
+                'epochs': resnet_config.get('epochs', 20),
+                'class_weight': resnet_config.get('class_weight', 'balanced'),
+                'data_augmentation': True
             }
         ))
 

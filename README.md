@@ -79,6 +79,8 @@ python benchmark.py --skip-cnn
 |-------|-------------|
 | CNN | 4-layer CNN with BatchNorm, AdamW optimizer |
 | CNN + Aug | Same architecture with data augmentation |
+| ResNet | Small ResNet-style CNN adapted for grayscale OCR |
+| ResNet + Aug | ResNet with data augmentation |
 
 Data augmentation includes: rotation, elastic distortion, translation, scaling, and noise.
 

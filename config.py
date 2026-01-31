@@ -95,11 +95,18 @@ def merge_args_with_config(args, config: Dict[str, Any]) -> Dict[str, Any]:
     if 'skip_learning_curves' in args_dict:
         config['experiment']['skip_learning_curves'] = args_dict['skip_learning_curves']
 
+    if 'skip_lbp' in args_dict:
+        config['experiment']['skip_lbp'] = args_dict['skip_lbp']
+
+
     if 'skip_hog' in args_dict:
         config['experiment']['skip_hog'] = args_dict['skip_hog']
 
     if 'skip_cnn' in args_dict:
         config['experiment']['skip_cnn'] = args_dict['skip_cnn']
+
+    if 'skip_resnet' in args_dict:
+        config['experiment']['skip_resnet'] = args_dict['skip_resnet']
 
     # Classical method flags
     if 'skip_zernike' in args_dict:

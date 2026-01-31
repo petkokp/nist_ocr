@@ -15,6 +15,15 @@ dataset:
   test_limit: 500
   image_size: 32
 
+#LBP + Linear SVM             
+lbp:
+  radius: 2 # BASELINE IS 2
+  n_points: null
+  method: "uniform"
+  class_weight: "balanced"
+  max_iter: 3000 
+
+
 # Zernike Moments + SVM configuration
 zernike:
   radius: 30
@@ -49,6 +58,19 @@ cnn:
   optimizer: "adamw"  # "adamw", "adam", or "sgd"
   use_scheduler: true
   early_stopping_patience: 5
+  weight_decay: 0.0005
+  label_smoothing: 0.0
+
+# ResNet model configuration
+resnet:
+  epochs: 15
+  batch_size: 64
+  learning_rate: 0.001
+  optimizer: "adamw"
+  weight_decay: 0.0005
+  use_scheduler: true
+  early_stopping_patience: 5
+  label_smoothing: 0.0
 
 # Data augmentation configuration (for CNN)
 augmentation:
@@ -63,10 +85,12 @@ augmentation:
 # Experiment configuration
 experiment:
   skip_learning_curves: false
+  skip_lbp: false
   skip_hog: false
   skip_zernike: false
   skip_projection: false
   skip_cnn: false
+  skip_resnet: false
   checkpoint_dir: "checkpoints"
   results_dir: "results"
   save_predictions: true

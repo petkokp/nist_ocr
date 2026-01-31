@@ -14,6 +14,14 @@ dataset:
   test_limit: null     
   image_size: 32
 
+#LBP + Linear SVM             
+lbp:
+  radius: 4 # BASELINE IS 2, for 62c config trying higher
+  n_points: null
+  method: "uniform"
+  class_weight: "balanced"
+  max_iter: 3000 
+
 # HOG + Linear SVM - optimized for large datasets
 hog:
   orientations: 9
@@ -69,11 +77,24 @@ cnn:
   early_stopping_patience: 5 #7
   label_smoothing: 0.1 # previous NO
 
+# ResNet configuration - scaled for 62 classes
+resnet:
+  epochs: 30
+  batch_size: 256
+  learning_rate: 0.0005
+  optimizer: "adamw"
+  weight_decay: 0.0005
+  use_scheduler: true
+  early_stopping_patience: 5
+  label_smoothing: 0.1
+
 # Experiment configuration
 experiment:
   skip_learning_curves: true  # CRITICAL: Skip to save RAM (trains 6x fewer times)
+  skip_lbp: false
   skip_hog: false
   skip_cnn: false
+  skip_resnet: false
   skip_zernike: false
   skip_projection: false
   checkpoint_dir: "checkpoints"
