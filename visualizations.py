@@ -214,7 +214,7 @@ def visualize_misclassifications(X, y_true, y_pred, class_names, idx_to_show=Non
         axes[i].imshow(img, cmap='gray')
         axes[i].axis('off')
 
-        # Title with true and predicted labels
+        # Text with true and predicted labels (anchored below each image)
         true_label = class_names[y_true[idx]]
         pred_label = class_names[y_pred[idx]]
 
@@ -222,7 +222,16 @@ def visualize_misclassifications(X, y_true, y_pred, class_names, idx_to_show=Non
         if confidences is not None:
             title += f"\nConf: {confidences[idx]:.2%}"
 
-        axes[i].set_title(title, fontsize=10, color='red' if y_true[idx] != y_pred[idx] else 'green')
+        axes[i].text(
+            0.5,
+            -0.12,
+            title,
+            transform=axes[i].transAxes,
+            ha='center',
+            va='top',
+            fontsize=10,
+            color='red' if y_true[idx] != y_pred[idx] else 'green'
+        )
 
     # Hide extra subplots
     for i in range(n_samples, len(axes)):
