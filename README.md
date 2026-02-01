@@ -228,22 +228,22 @@ results/
 | `predictions.csv` | All predictions with confidence scores |
 | `method_comparison.png` | Bar charts comparing all methods |
 
-<!-- ### Summary Table
+### Summary Table
 
 The benchmark outputs a summary table:
 
 ```
 Model                | Accuracy   | Train Time   | Latency
 ----------------------------------------------------------
-LBP + SVM            | 85.20%     | 12.34        | 0.45
-HOG + SVM            | 88.40%     | 8.21         | 0.32
-Zernike + SVM        | 82.60%     | 15.67        | 0.58
-Projection + kNN     | 75.80%     | 2.45         | 1.23
-CNN                  | 91.20%     | 45.32        | 0.12
-CNN + Aug            | 93.40%     | 52.18        | 0.12
-ResNet               | 92.80%     | 68.45        | 0.15
-ResNet + Aug         | 94.60%     | 75.21        | 0.15
-``` -->
+LBP + SVM            | 16.70%     | 52.9         | 0.59
+HOG + SVM            | 63.30%     | 55.2         | 0.17
+Zernike + SVM        | 18.00%     | 857.2        | 10.58
+Projection + kNN     | 62.90%     | 0.6          | 0.15
+CNN + Aug            | 75.50%     | 361.9        | 0.01
+CNN                  | 77.20%     | 30.9         | 0.01
+ResNet + Aug         | 80.00%     | 772.7        | 0.08
+ResNet               | 81.90%     | 352.8        | 0.08
+```
 
 ## Project Structure
 
