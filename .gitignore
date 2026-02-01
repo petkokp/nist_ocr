@@ -41,6 +41,3 @@ Figure_*.png
 results/
 report_figures/
 experiments.csv
-
-# Logs
-*.log
