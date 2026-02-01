@@ -88,7 +88,7 @@ def plot_learning_curve(train_sizes, train_acc, test_acc, title, save_path=None)
         plt.savefig(save_path, dpi=150, bbox_inches='tight')
         print(f"Learning curve saved to {save_path}")
 
-    plt.show()
+    # plt.show()
 
 
 def plot_confusion_matrix(y_true, y_pred, class_names, save_path=None, figsize=(12, 10)):
@@ -118,7 +118,7 @@ def plot_confusion_matrix(y_true, y_pred, class_names, save_path=None, figsize=(
         plt.savefig(save_path, dpi=150, bbox_inches='tight')
         print(f"Confusion matrix saved to {save_path}")
 
-    plt.show()
+    # plt.show()
     return cm
 
 
@@ -163,7 +163,7 @@ def plot_per_class_metrics(y_true, y_pred, class_names, save_path=None):
         plt.savefig(save_path, dpi=150, bbox_inches='tight')
         print(f"Per-class metrics saved to {save_path}")
 
-    plt.show()
+    # plt.show()
 
 
 def visualize_misclassifications(X, y_true, y_pred, class_names, idx_to_show=None,
@@ -245,7 +245,7 @@ def visualize_misclassifications(X, y_true, y_pred, class_names, idx_to_show=Non
         plt.savefig(save_path, dpi=150, bbox_inches='tight')
         print(f"Misclassifications visualization saved to {save_path}")
 
-    plt.show()
+    # plt.show()
 
 
 def plot_training_history(history, save_path=None):
@@ -295,7 +295,7 @@ def plot_training_history(history, save_path=None):
         plt.savefig(save_path, dpi=150, bbox_inches='tight')
         print(f"Training history saved to {save_path}")
 
-    plt.show()
+    # plt.show()
 
 
 def save_predictions(X, y_true, y_pred, class_names, save_path, confidences=None):
@@ -333,98 +333,125 @@ def save_predictions(X, y_true, y_pred, class_names, save_path, confidences=None
 
 def plot_method_comparison(results, save_path=None):
     """
-    Plot comprehensive comparison of all OCR methods.
-
+    Plot separate figures for OCR methods to be used in reports.
+    
     Args:
         results: List of dictionaries with keys:
                  'Model', 'Accuracy', 'Train Time (s)', 'Latency (ms/img)'
-        save_path: Optional path to save the figure
+        save_path: Base path to save figures (e.g., 'plots/experiment.png').
+                   The function will append suffixes like '_accuracy.png', 
+                   '_latency.png', etc. to this base name.
     """
     if not results:
         print("No results to plot")
         return
 
+    # Extract data
     models = [r['Model'] for r in results]
     accuracies = [r['Accuracy'] * 100 for r in results]
     train_times = [r['Train Time (s)'] for r in results]
     latencies = [r['Latency (ms/img)'] for r in results]
 
-    # Color palette for different methods
+    # Color palette
     colors = plt.cm.Set2(np.linspace(0, 1, len(models)))
+    
+    # Helper to handle saving and showing
+    def finalize_plot(suffix_name):
+        plt.tight_layout()
+        if save_path:
+            p = Path(save_path)
+            # Create new filename: original_name + suffix + extension
+            new_name = f"{p.stem}_{suffix_name}{p.suffix}"
+            full_path = p.parent / new_name
+            
+            p.parent.mkdir(parents=True, exist_ok=True)
+            plt.savefig(full_path, dpi=300, bbox_inches='tight') # High DPI for LaTeX
+            print(f"Saved: {full_path}")
+        # plt.show()
+        plt.close() # Free memory
 
-    fig = plt.figure(figsize=(18, 12))
-    gs = fig.add_gridspec(2, 3, hspace=0.3, wspace=0.3)
-
-    # 1. Accuracy comparison (bar chart)
-    ax1 = fig.add_subplot(gs[0, 0])
-    bars = ax1.bar(range(len(models)), accuracies, color=colors, edgecolor='black', alpha=0.8)
-    ax1.set_ylabel('Accuracy (%)', fontsize=12)
-    ax1.set_title('Model Accuracy Comparison', fontsize=13, fontweight='bold')
-    ax1.set_xticks(range(len(models)))
-    ax1.set_xticklabels(models, rotation=45, ha='right', fontsize=10)
-    ax1.set_ylim([0, 105])
-    ax1.grid(axis='y', alpha=0.3)
-
-    # Add value labels on bars
+    # --- 1. Accuracy Bar Chart ---
+    plt.figure(figsize=(8, 6))
+    bars = plt.bar(range(len(models)), accuracies, color=colors, edgecolor='black', alpha=0.8)
+    plt.ylabel('Accuracy (%)', fontsize=14)
+    plt.title('Model Accuracy Comparison', fontsize=16, fontweight='bold')
+    plt.xticks(range(len(models)), models, rotation=45, ha='right', fontsize=12)
+    plt.yticks(fontsize=12)
+    plt.ylim([0, 105])
+    plt.grid(axis='y', alpha=0.3)
+    
     for bar, acc in zip(bars, accuracies):
-        ax1.text(bar.get_x() + bar.get_width()/2, bar.get_height() + 1,
-                f'{acc:.1f}%', ha='center', va='bottom', fontsize=10, fontweight='bold')
+        plt.text(bar.get_x() + bar.get_width()/2, bar.get_height() + 1,
+                 f'{acc:.1f}%', ha='center', va='bottom', fontsize=11, fontweight='bold')
+    
+    finalize_plot('accuracy')
 
-    # 2. Training time comparison (bar chart)
-    ax2 = fig.add_subplot(gs[0, 1])
-    bars = ax2.bar(range(len(models)), train_times, color=colors, edgecolor='black', alpha=0.8)
-    ax2.set_ylabel('Training Time (seconds)', fontsize=12)
-    ax2.set_title('Training Time Comparison', fontsize=13, fontweight='bold')
-    ax2.set_xticks(range(len(models)))
-    ax2.set_xticklabels(models, rotation=45, ha='right', fontsize=10)
-    ax2.grid(axis='y', alpha=0.3)
+    # --- 2. Training Time Bar Chart ---
+    plt.figure(figsize=(8, 6))
+    bars = plt.bar(range(len(models)), train_times, color=colors, edgecolor='black', alpha=0.8)
+    plt.ylabel('Training Time (seconds)', fontsize=14)
+    plt.title('Training Time Comparison', fontsize=16, fontweight='bold')
+    plt.xticks(range(len(models)), models, rotation=45, ha='right', fontsize=12)
+    plt.yticks(fontsize=12)
+    plt.grid(axis='y', alpha=0.3)
 
-    # Add value labels
     for bar, time in zip(bars, train_times):
-        ax2.text(bar.get_x() + bar.get_width()/2, bar.get_height() + 0.5,
-                f'{time:.1f}s', ha='center', va='bottom', fontsize=10)
+        plt.text(bar.get_x() + bar.get_width()/2, bar.get_height(),
+                 f'{time:.1f}s', ha='center', va='bottom', fontsize=11)
+                 
+    finalize_plot('train_time')
 
-    # 3. Inference latency comparison (bar chart)
-    ax3 = fig.add_subplot(gs[0, 2])
-    bars = ax3.bar(range(len(models)), latencies, color=colors, edgecolor='black', alpha=0.8)
-    ax3.set_ylabel('Latency (ms/image)', fontsize=12)
-    ax3.set_title('Inference Latency Comparison', fontsize=13, fontweight='bold')
-    ax3.set_xticks(range(len(models)))
-    ax3.set_xticklabels(models, rotation=45, ha='right', fontsize=10)
-    ax3.grid(axis='y', alpha=0.3)
+    # --- 3. Latency Bar Chart ---
+    plt.figure(figsize=(8, 6))
+    bars = plt.bar(range(len(models)), latencies, color=colors, edgecolor='black', alpha=0.8)
+    plt.ylabel('Latency (ms/image)', fontsize=14)
+    plt.title('Inference Latency Comparison', fontsize=16, fontweight='bold')
+    plt.xticks(range(len(models)), models, rotation=45, ha='right', fontsize=12)
+    plt.yticks(fontsize=12)
+    plt.grid(axis='y', alpha=0.3)
 
-    # Add value labels
     for bar, lat in zip(bars, latencies):
-        ax3.text(bar.get_x() + bar.get_width()/2, bar.get_height() + 0.1,
-                f'{lat:.2f}', ha='center', va='bottom', fontsize=10)
+        plt.text(bar.get_x() + bar.get_width()/2, bar.get_height(),
+                 f'{lat:.2f}', ha='center', va='bottom', fontsize=11)
+                 
+    finalize_plot('latency')
 
-    # 4. Accuracy vs Training Time scatter
-    ax4 = fig.add_subplot(gs[1, 0])
+    # --- 4. Accuracy vs Training Time Scatter ---
+    plt.figure(figsize=(8, 6))
     for i, (model, acc, time) in enumerate(zip(models, accuracies, train_times)):
-        ax4.scatter(time, acc, s=200, c=[colors[i]], edgecolors='black', linewidth=2, alpha=0.8)
-        ax4.annotate(model, (time, acc), xytext=(5, 5), textcoords='offset points', fontsize=9)
-    ax4.set_xlabel('Training Time (seconds)', fontsize=12)
-    ax4.set_ylabel('Accuracy (%)', fontsize=12)
-    ax4.set_title('Accuracy vs Training Time', fontsize=13, fontweight='bold')
-    ax4.grid(alpha=0.3)
+        plt.scatter(time, acc, s=300, c=[colors[i]], edgecolors='black', linewidth=2, alpha=0.8, label=model)
+    
+    plt.xlabel('Training Time (seconds)', fontsize=14)
+    plt.ylabel('Accuracy (%)', fontsize=14)
+    plt.title('Accuracy vs Training Time', fontsize=16, fontweight='bold')
+    plt.grid(alpha=0.3)
+    plt.legend(bbox_to_anchor=(1.05, 1), loc='upper left', borderaxespad=0.)
+    
+    finalize_plot('scatter_acc_time')
 
-    # 5. Accuracy vs Latency scatter
-    ax5 = fig.add_subplot(gs[1, 1])
+    # --- 5. Accuracy vs Latency Scatter ---
+    plt.figure(figsize=(8, 6))
     for i, (model, acc, lat) in enumerate(zip(models, accuracies, latencies)):
-        ax5.scatter(lat, acc, s=200, c=[colors[i]], edgecolors='black', linewidth=2, alpha=0.8)
-        ax5.annotate(model, (lat, acc), xytext=(5, 5), textcoords='offset points', fontsize=9)
-    ax5.set_xlabel('Latency (ms/image)', fontsize=12)
-    ax5.set_ylabel('Accuracy (%)', fontsize=12)
-    ax5.set_title('Accuracy vs Inference Latency', fontsize=13, fontweight='bold')
-    ax5.grid(alpha=0.3)
+        plt.scatter(lat, acc, s=300, c=[colors[i]], edgecolors='black', linewidth=2, alpha=0.8, label=model)
+        
+    plt.xlabel('Latency (ms/image)', fontsize=14)
+    plt.ylabel('Accuracy (%)', fontsize=14)
+    plt.title('Accuracy vs Inference Latency', fontsize=16, fontweight='bold')
+    plt.grid(alpha=0.3)
+    plt.legend(bbox_to_anchor=(1.05, 1), loc='upper left', borderaxespad=0.)
+    
+    finalize_plot('scatter_acc_latency')
 
-    # 6. Summary table
-    ax6 = fig.add_subplot(gs[1, 2])
-    ax6.axis('off')
-
-    # Create summary table data
+    # --- 6. Summary Table (Image) ---
+    # Note: For LaTeX, it is usually better to print the LaTeX code directly (see below)
+    plt.figure(figsize=(10, 4))
+    plt.axis('off')
+    
     table_data = []
-    for r in results:
+    # Sort for table
+    sorted_results = sorted(results, key=lambda x: x['Accuracy'], reverse=True)
+    
+    for r in sorted_results:
         table_data.append([
             r['Model'],
             f"{r['Accuracy']*100:.2f}%",
@@ -432,10 +459,7 @@ def plot_method_comparison(results, save_path=None):
             f"{r['Latency (ms/img)']:.2f}ms"
         ])
 
-    # Sort by accuracy for ranking
-    sorted_results = sorted(results, key=lambda x: x['Accuracy'], reverse=True)
-
-    table = ax6.table(
+    table = plt.table(
         cellText=table_data,
         colLabels=['Model', 'Accuracy', 'Train Time', 'Latency'],
         cellLoc='center',
@@ -443,23 +467,30 @@ def plot_method_comparison(results, save_path=None):
         colColours=['lightgray'] * 4
     )
     table.auto_set_font_size(False)
-    table.set_fontsize(11)
-    table.scale(1.2, 1.8)
+    table.set_fontsize(12)
+    table.scale(1.2, 2)
+    plt.title('Model Performance Summary', fontsize=16, fontweight='bold')
+    
+    finalize_plot('table')
 
-    # Add best model highlight
-    best_model = sorted_results[0]['Model']
-    ax6.set_title(f'Summary\n(Best: {best_model} @ {sorted_results[0]["Accuracy"]*100:.2f}%)',
-                  fontsize=13, fontweight='bold', pad=20)
-
-    plt.suptitle('OCR Method Comparison Dashboard', fontsize=16, fontweight='bold', y=0.98)
-
-    if save_path:
-        Path(save_path).parent.mkdir(parents=True, exist_ok=True)
-        plt.savefig(save_path, dpi=150, bbox_inches='tight')
-        print(f"Method comparison plot saved to {save_path}")
-
-    plt.show()
-
+    # --- BONUS: Print LaTeX Table Code ---
+    print("\n" + "="*30)
+    print("LaTeX Table Code (Copy/Paste this into your report):")
+    print("="*30)
+    print(r"\begin{table}[h]")
+    print(r"\centering")
+    print(r"\begin{tabular}{|l|c|c|c|}")
+    print(r"\hline")
+    print(r"\textbf{Model} & \textbf{Accuracy} & \textbf{Train Time (s)} & \textbf{Latency (ms)} \\")
+    print(r"\hline")
+    for r in sorted_results:
+        print(f"{r['Model']} & {r['Accuracy']*100:.1f}\\% & {r['Train Time (s)']:.1f} & {r['Latency (ms/img)']:.2f} \\\\")
+    print(r"\hline")
+    print(r"\end{tabular}")
+    print(r"\caption{Comparison of OCR models sorted by accuracy.}")
+    print(r"\label{tab:ocr_results}")
+    print(r"\end{table}")
+    print("="*30 + "\n")
 
 def plot_feature_importance(model, feature_names=None, top_k=20, save_path=None):
     """
@@ -507,4 +538,4 @@ def plot_feature_importance(model, feature_names=None, top_k=20, save_path=None)
         plt.savefig(save_path, dpi=150, bbox_inches='tight')
         print(f"Feature importance plot saved to {save_path}")
 
-    plt.show()
+    # plt.show()

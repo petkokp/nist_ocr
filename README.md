@@ -17,6 +17,9 @@ pip install -r requirements.txt
 ## Quick Start
 
 ```bash
+# Reproduce results from the report
+python benchmark.py --config config_62_classes.yaml --train-limit 50000 --test-limit 10000
+
 # Run with default settings (all 5 methods)
 python benchmark.py
 

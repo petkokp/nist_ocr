@@ -1,6 +1,31 @@
+import os
 from pathlib import Path
 from PIL import Image
-from torch.utils.data import Dataset
+from torch.utils.data import Dataset, DataLoader, Subset
+
+optimal_workers = os.cpu_count() - 1
+
+if optimal_workers is None or optimal_workers < 1:
+    optimal_workers = 2
+
+def extract_samples(dataset, indices, batch_size=128):
+    subset = Subset(dataset, indices)
+    
+    loader = DataLoader(
+        subset, 
+        batch_size=batch_size, 
+        num_workers=optimal_workers,
+        shuffle=False
+    )
+    
+    all_x = []
+    all_y = []
+    
+    for X_batch, y_batch in loader:
+        all_x.extend([x for x in X_batch])
+        all_y.extend(y_batch.tolist()) 
+        
+    return all_x, all_y
 
 class NISTDataset(Dataset):
     def __init__(self, root_dir, partitions=None, transform=None, selected_classes=None):

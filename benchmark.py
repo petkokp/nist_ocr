@@ -5,7 +5,7 @@ from sklearn.metrics import accuracy_score, classification_report
 from torchvision import transforms
 from pathlib import Path
 
-from dataset import NISTDataset
+from dataset import NISTDataset, extract_samples
 from deep_learning_methods.cnn import DeepLearningOCR
 from deep_learning_methods.resnet_ocr import ResNetOCR
 from classical_methods import LBPSVM_OCR, HOGSVM_OCR, ZernikeOCR, ProjectionOCR
@@ -282,20 +282,30 @@ if __name__ == "__main__":
 
     # Sample data
     random.seed(42)
-    train_indices = list(range(len(train_dataset)))
-    random.shuffle(train_indices)
-    train_indices = train_indices[:dataset_config['train_limit']]
+    
+    train_len = len(train_dataset)
+    train_conf_limit = dataset_config.get('train_limit')
 
-    test_indices = list(range(len(test_dataset)))
-    random.shuffle(test_indices)
-    test_indices = test_indices[:dataset_config['test_limit']]
+    if train_conf_limit is None:
+        k_train = train_len
+    else:
+        k_train = min(train_conf_limit, train_len)
+
+    test_len = len(test_dataset)
+    test_conf_limit = dataset_config.get('test_limit')
+
+    if test_conf_limit is None:
+        k_test = test_len
+    else:
+        k_test = min(test_conf_limit, test_len)
+
+    train_indices = random.sample(range(train_len), k_train)
+    test_indices = random.sample(range(test_len), k_test)
 
     print(f"[Data] Extracting {len(train_indices)} train and {len(test_indices)} test samples...")
-    X_train = [train_dataset[i][0] for i in train_indices]
-    y_train = [train_dataset[i][1] for i in train_indices]
 
-    X_test = [test_dataset[i][0] for i in test_indices]
-    y_test = [test_dataset[i][1] for i in test_indices]
+    X_train, y_train = extract_samples(train_dataset, train_indices)
+    X_test, y_test = extract_samples(test_dataset, test_indices)
 
     # Get class names for reporting DONT SORT
     #class_names = [train_dataset.idx_to_char[i] for i in sorted(list(set(y_test)))]
