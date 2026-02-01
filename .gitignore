@@ -44,3 +44,4 @@ experiments.csv
 
 # Logs
 *.logreport/
+report/
