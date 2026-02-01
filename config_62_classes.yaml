@@ -72,10 +72,10 @@ cnn:
   batch_size: 256 #64
   learning_rate: 0.0005 #0.001
   optimizer: "adamw"  # AdamW with weight decay helps generalization
-  weight_decay: 0.0005 #previous NO
+  weight_decay: 0.0005 
   use_scheduler: true
   early_stopping_patience: 5 #7
-  label_smoothing: 0.1 # previous NO
+  label_smoothing: 0.1 
 
 # ResNet configuration - scaled for 62 classes
 resnet:
