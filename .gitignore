@@ -43,4 +43,4 @@ report_figures/
 experiments.csv
 
 # Logs
-*.log
+*.logreport/
