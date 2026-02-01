@@ -228,7 +228,7 @@ results/
 | `predictions.csv` | All predictions with confidence scores |
 | `method_comparison.png` | Bar charts comparing all methods |
 
-### Summary Table
+<!-- ### Summary Table
 
 The benchmark outputs a summary table:
 
@@ -243,7 +243,7 @@ CNN                  | 91.20%     | 45.32        | 0.12
 CNN + Aug            | 93.40%     | 52.18        | 0.12
 ResNet               | 92.80%     | 68.45        | 0.15
 ResNet + Aug         | 94.60%     | 75.21        | 0.15
-```
+``` -->
 
 ## Project Structure
 
